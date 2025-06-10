@@ -1,3 +1,4 @@
+'use client';
 import { getSessionOrRedirect } from '../auth/session';
 import ChatPlaceholder from './ChatPlaceholder';
 

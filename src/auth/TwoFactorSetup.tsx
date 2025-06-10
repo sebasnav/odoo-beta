@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import QRCode from 'qrcode.react';
+import QRCode from 'react-qr-code';
 
 export default function TwoFactorSetup({ onVerified }: { onVerified: () => void }) {
   const [secret, setSecret] = useState('');
@@ -14,13 +14,32 @@ export default function TwoFactorSetup({ onVerified }: { onVerified: () => void 
     setLoading(true);
     setError('');
     setSuccess('');
-    // Solicitar a Supabase el secret para TOTP
-    const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' });
-    setLoading(false);
-    if (error) setError(error.message);
-    else if (data) {
-      setSecret(data.totp.secret);
-      setOtpauthUrl(data.totp.otpauth_url);
+    try {
+      // Paso 1: Enroll TOTP
+      const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' });
+      if (error) {
+        setError(error.message);
+      } else if (data?.totp?.qr_code) {
+        setSecret(data.totp.secret);
+        setOtpauthUrl(data.totp.qr_code);
+        // Guardar el factorId para la verificación posterior
+        (window as any).__supabaseFactorId = data.id;
+        // Paso 2: Crear challenge y guardar challengeId
+        const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({ factorId: data.id });
+        if (challengeError) {
+          setError(challengeError.message);
+        } else if (challengeData?.id) {
+          (window as any).__supabaseChallengeId = challengeData.id;
+        } else {
+          setError('No se pudo crear el challenge para el factor.');
+        }
+      } else {
+        setError('No se pudo obtener el QR. Intenta nuevamente.');
+      }
+    } catch (e: any) {
+      setError(e.message || 'Error inesperado.');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -29,13 +48,21 @@ export default function TwoFactorSetup({ onVerified }: { onVerified: () => void 
     setLoading(true);
     setError('');
     setSuccess('');
-    // Verificar el código TOTP
-    const { error } = await supabase.auth.mfa.verify({ factorType: 'totp', code });
-    setLoading(false);
-    if (error) setError('Código incorrecto o expirado.');
-    else {
-      setSuccess('2FA activado correctamente.');
-      onVerified();
+    try {
+      // Paso 3: Verificar el código TOTP usando factorId y challengeId
+      const factorId = (window as any).__supabaseFactorId || '';
+      const challengeId = (window as any).__supabaseChallengeId || '';
+      const { error } = await supabase.auth.mfa.verify({ factorId, challengeId, code });
+      if (error) {
+        setError('Código incorrecto o expirado.');
+      } else {
+        setSuccess('2FA activado correctamente.');
+        onVerified();
+      }
+    } catch (e: any) {
+      setError(e.message || 'Error inesperado.');
+    } finally {
+      setLoading(false);
     }
   }
 

@@ -75,10 +75,14 @@ export default function AuthForm({ lang: langProp, setLang: setLangProp }: AuthF
       }
       return;
     }
-    // Persistencia de sesión: guardar token en cookie para middleware y SSR
+    // Persistencia de sesión: guardar token en cookie HTTPOnly para middleware y SSR
     const { data: sessionData } = await supabase.auth.getSession();
     if (sessionData?.session?.access_token) {
-      document.cookie = `sb-access-token=${sessionData.session.access_token}; path=/;`;
+      await fetch('/api/set-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ access_token: sessionData.session.access_token })
+      });
     }
     setLoading(false);
     // Forzar recarga para que el middleware lea la cookie y asegurar acceso a /chat
