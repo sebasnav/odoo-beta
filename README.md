@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Next.js + Supabase + TailwindCSS Starter
 
 Este proyecto es una base moderna para apps con autenticación (email/password y Google OAuth), chat básico y estructura lista para conectar con n8n y Odoo 17 POS.
@@ -65,3 +66,6 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+=======
+# odoo-beta
+>>>>>>> 4e982c21bb95177c4f09429d0a7e2761567db51f
